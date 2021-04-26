@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/gorilla/websocket"
+	wk "github.com/rAndrade360/realtime-chat-go-react/websocket"
 )
 
 func main() {
@@ -16,37 +16,15 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin:     func(r *http.Request) bool { return true },
-}
-
-func reader(conn *websocket.Conn) {
-	for {
-		messageType, p, err := conn.ReadMessage()
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		fmt.Println(string(p))
-
-		if err := conn.WriteMessage(messageType, p); err != nil {
-			log.Println(err)
-			return
-		}
-	}
-}
-
 func serveWs(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(r.Host)
 
-	ws, err := upgrader.Upgrade(w, r, nil)
+	ws, err := wk.Upgrade(w, r)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	reader(ws)
+	go wk.Writer(ws)
+	wk.Reader(ws)
 }
